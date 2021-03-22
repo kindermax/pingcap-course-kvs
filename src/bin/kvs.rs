@@ -1,6 +1,5 @@
 use clap::{App, AppSettings, Arg, SubCommand};
 
-use kvs::KvStore;
 use std::process::exit;
 
 fn main() {
