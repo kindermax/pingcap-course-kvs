@@ -2,17 +2,19 @@ use serde::{Serialize, Deserialize};
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-use std::fs::File;
-use std::fs::OpenOptions;
-use std::io;
+use std::fs::{OpenOptions, File};
+use std::io::prelude::*;
 use std::io::Write;
+use std::io::BufReader;
 
 use crate::{Result, KvsError};
+
+type Index = HashMap<String, String>;
 
 #[derive(Default, Debug)]
 pub struct KvStore {
     path: PathBuf,
-    store: HashMap<String, String>,
+    index: Index,
 }
 
 
@@ -27,40 +29,39 @@ enum Cmd {
 // What is the impact of buffering on subsequent reads?
 // When should you open and close file handles? For each command? For the lifetime of the KvStore?
 
+
 impl KvStore {
     pub fn open(path: &Path) -> Result<KvStore> {
-        Ok(KvStore {
-            path: path.to_path_buf().join(PathBuf::from("1.json")),
-            store: HashMap::new(),
-        })
+        let mut store = KvStore {
+            path: path.to_path_buf().join(PathBuf::from("wal.json")),
+            index: HashMap::new(),
+        };
+
+        store.read_log()?;
+
+        Ok(store)
     }
 
 
     pub fn set(&mut self, key: String, value: String) -> Result<()> {
-        let cmd = Cmd::Set(key.clone(), value.clone());
-
-        self.write_cmd(cmd)?;
-
-        self.store.insert(key, value);
+        self.write_cmd(Cmd::Set(key.clone(), value.clone()))?;
+        self.index.insert(key, value);
+        // TODO better error handling
         Ok(())
     }
 
     pub fn get(&mut self, key: String) -> Result<Option<String>> {
-        self.read_log()?;
-        Ok(self.store.get(&key).cloned())
+        Ok(self.index.get(&key).cloned())
     }
 
     pub fn remove(&mut self, key: String) -> Result<()> {
-        if !self.store.contains_key(&key) {
-            // TODO maybe return error if no key ?
+        if !self.index.contains_key(&key) {
             return Err(KvsError::KeyNotFound)
         }
 
-        let cmd = Cmd::Rm(key.clone());
+        self.write_cmd(Cmd::Rm(key.clone()))?;
 
-        self.write_cmd(cmd)?;
-
-        self.store.remove(&key);
+        self.index.remove(&key);
         Ok(())
     }
 
@@ -79,17 +80,25 @@ impl KvStore {
     }
 
     fn read_log(&mut self) -> Result<()> {
-        let content = std::fs::read_to_string(&self.path)?;
+        if !Path::new(&self.path).exists() {
+            File::create(&self.path)?;
+        }
+        let log = File::open(&self.path)?;
 
-        for line in content.lines() {
-            let cmd: Cmd = serde_json::from_str(line)?;
+        let reader = BufReader::new(log);
+
+
+        // TODO Maybe serde will deserialize a record directly from an
+        // I/O stream and stop reading when it's done,
+        // leaving the file cursor in the correct place to read subsequent records
+        for line in reader.lines() {
+            let cmd: Cmd = serde_json::from_str(&line?)?;
             match cmd {
                 Cmd::Set(key, value) => {
-                    // TODO better error handling
-                    self.set(key, value)?
+                    self.index.insert(key, value);
                 },
                 Cmd::Rm(key) => {
-                    self.remove(key)?
+                    self.index.remove(&key);
                 },
             }
         }
