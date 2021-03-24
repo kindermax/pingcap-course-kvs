@@ -1,6 +1,7 @@
 use serde::{Serialize, Deserialize};
 
 use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::fs::{OpenOptions, File};
 use std::io::prelude::*;
@@ -150,8 +151,7 @@ impl KvStore {
     }
 
     fn compact(&mut self) -> Result<()> {
-        let mut positions: Vec<String> = vec!();
-        let mut index: HashMap<String, Cmd> = HashMap::new();
+        let mut index: BTreeMap<String, Cmd> = BTreeMap::new();
 
         let log = File::open(&self.log_path)?;
 
@@ -164,16 +164,9 @@ impl KvStore {
                 Cmd::Set(key, value) => {
                     // TODO new cmd, bad for perf
                     index.insert(key.clone(), Cmd::Set(key.clone(), value));
-                    // TODO search in vec is suboptimal
-                    if !positions.contains(&key) {
-                        positions.push(key);
-                    }
                 },
                 Cmd::Rm(key) => {
                     index.insert(key.clone(), Cmd::Rm(key.clone()));
-                    if !positions.contains(&key) {
-                        positions.push(key);
-                    }
                 },
             }
         }
@@ -184,9 +177,8 @@ impl KvStore {
             .create(true)
             .open(&self.new_log_path)?;
 
-        for key in positions {
-            let cmd = index.get(&key).expect("cmd must exist in index");
-            let data = serde_json::to_string(&cmd)?;
+        for cmd in index.values() {
+            let data = serde_json::to_string(cmd)?;
             new_log.write_all(format!("{}\n", data).as_bytes())?;
         }
 
