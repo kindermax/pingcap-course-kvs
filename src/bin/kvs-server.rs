@@ -10,7 +10,7 @@ use std::str::FromStr;
 use std::process::exit;
 
 use kvs::{Result, KvsError};
-use kvs::engines::{KvStore, KvsEngine};
+use kvs::engines::{KvStore, KvsEngine, SledKvsEngine};
 
 
 const DEFAULT_ENGINE: Engine = Engine::kvs;
@@ -21,12 +21,14 @@ const DEFAULT_ENGINE: Engine = Engine::kvs;
 #[clap(author, version, about, long_about = None)]
 struct Cli {
     #[clap(
+        long,
         name = "ADDRESS_FORMAT",
         default_value = "127.0.0.1:4000",
         help = "Sets the server address",
     )]
     addr: SocketAddr,
     #[clap(
+        long,
         name = "ENGINE_NAME",
         help = "Sets the server engine",
     )]
@@ -105,7 +107,10 @@ fn run(cli: Cli) -> Result<()> {
             )
         },
         Engine::sled => {
-            unimplemented!()
+            run_with_engine(
+                SledKvsEngine::open(workdir)?,
+                addr
+            )
         },
     }
 }
