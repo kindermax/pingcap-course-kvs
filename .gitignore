@@ -1,3 +1,5 @@
 /target
 .idea
 wal.json
+*.log
+engine

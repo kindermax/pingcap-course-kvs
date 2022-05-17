@@ -4,6 +4,10 @@ use std::io;
 /// Error type for kvs
 #[derive(Fail, Debug)]
 pub enum KvsError {
+    /// Error with a string message
+    #[fail(display = "{}", _0)]
+    StringError(String),
+
     /// IO error.
     #[fail(display = "{}", _0)]
     Io(#[cause] io::Error),
