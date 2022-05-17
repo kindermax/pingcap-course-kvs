@@ -108,7 +108,7 @@ fn run(cli: Cli) -> Result<()> {
         },
         Engine::sled => {
             run_with_engine(
-                SledKvsEngine::open(workdir)?,
+                SledKvsEngine::new(sled::open(workdir)?),
                 addr
             )
         },

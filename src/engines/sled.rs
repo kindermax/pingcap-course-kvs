@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 use sled;
 
 use super::KvsEngine;
@@ -12,9 +10,8 @@ pub struct SledKvsEngine {
 
 
 impl SledKvsEngine {
-    pub fn open(path: PathBuf) -> Result<Self> {
-        let db = sled::open(path).unwrap();
-        Ok(SledKvsEngine { db })
+    pub fn new(db: sled::Db) -> Self {
+        SledKvsEngine { db }
     }
 }
 
