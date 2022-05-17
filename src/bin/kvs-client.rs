@@ -29,6 +29,7 @@ struct Get {
     #[clap(help = "A string key")]
     key: String,
     #[clap(
+        long,
         name = "ADDRESS_FORMAT",
         default_value = "127.0.0.1:4000",
         help = "Sets the server address",
@@ -43,6 +44,7 @@ struct Set {
     #[clap(help = "The string value of the key")]
     value: String,
     #[clap(
+        long,
         name = "ADDRESS_FORMAT",
         default_value = "127.0.0.1:4000",
         help = "Sets the server address",
@@ -55,6 +57,7 @@ struct Rm {
     #[clap(help = "A string key")]
     key: String,
     #[clap(
+        long,
         name = "ADDRESS_FORMAT",
         default_value = "127.0.0.1:4000",
         help = "Sets the server address",
