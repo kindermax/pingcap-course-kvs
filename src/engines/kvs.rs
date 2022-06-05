@@ -3,6 +3,7 @@ use std::fs::{self, File, OpenOptions};
 use std::io::{self, BufReader, BufWriter, Read, Seek, SeekFrom, Write};
 use std::ops::Range;
 use std::path::{Path, PathBuf};
+use std::sync::{Arc, Mutex};
 
 use serde::{Deserialize, Serialize};
 use serde_json::Deserializer;
@@ -16,7 +17,12 @@ const COMPACTION_THRESHOLD: u64 = 1024 * 1024;
 
 type Index = BTreeMap<String, CommandPos>;
 
+#[derive(Clone)]
 pub struct KvStore {
+    imp: Arc<Mutex<KvStoreImpl>>
+}
+
+struct KvStoreImpl {
     // directory for the log and other data.
     path: PathBuf,
     // map generation number to the file reader.
@@ -40,7 +46,81 @@ pub struct KvStore {
     // offset: u64,
 }
 
+
+impl KvStore {
+    // TODO what means impl Into<PathBuf>
+    pub fn open(path: impl Into<PathBuf>) -> Result<KvStore> {
+        let path = path.into();
+        fs::create_dir_all(&path)?;
+
+        let mut readers = HashMap::new();
+        let mut index = BTreeMap::new();
+
+        let gen_list = sorted_gen_list(&path)?;
+        let mut uncompacted = 0;
+
+        for &gen in &gen_list {
+            let mut reader = BufReaderWithPos::new(File::open(log_path(&path, gen))?)?;
+            uncompacted += load(gen, &mut reader, &mut index)?;
+            readers.insert(gen, reader);
+        }
+
+        let current_gen = gen_list.last().unwrap_or(&0) + 1;
+        let writer = new_log_file(&path, current_gen, &mut readers)?;
+
+        let imp = KvStoreImpl {
+            path,
+            readers,
+            writer,
+            current_gen,
+            index,
+            uncompacted,
+        };
+
+        Ok(KvStore {
+             imp: Arc::new(Mutex::new(imp))
+        })
+    }
+}
+
+
 impl KvsEngine for KvStore {
+    /// Gets the string value of a given string key.
+    ///
+    /// Returns `None` if the given key does not exist.
+    ///
+    /// # Errors
+    ///
+    /// It returns `KvsError::UnexpectedCommandType` if the given command type unexpected.
+    fn get(&self, key: String) -> Result<Option<String>> {
+        self.imp.lock().unwrap().get(key)
+    }
+
+    /// Sets the value of a string key to a string.
+    ///
+    /// If the key already exists, the previous value will be overwritten.
+    ///
+    /// # Errors
+    ///
+    /// It propagates I/O or serialization errors during writing the log.
+    fn set(&self, key: String, value: String) -> Result<()> {
+        self.imp.lock().unwrap().set(key, value)
+    }
+
+    /// Removes a given key.
+    ///
+    /// # Errors
+    ///
+    /// It returns `KvsError::KeyNotFound` if the given key is not found.
+    ///
+    /// It propagates I/O or serialization errors during writing the log.
+    fn remove(&self, key: String) -> Result<()> {
+        self.imp.lock().unwrap().remove(key)
+    }
+}
+
+
+impl KvStoreImpl {
     /// Gets the string value of a given string key.
     ///
     /// Returns `None` if the given key does not exist.
@@ -121,51 +201,6 @@ impl KvsEngine for KvStore {
             Err(KvsError::KeyNotFound)
         }
     }
-}
-
-
-#[derive(Serialize, Deserialize, Debug)]
-enum Cmd {
-    Set(String, String),
-    Rm(String),
-}
-
-// TODOs:
-// where is the system performing buffering and where do you need buffering?
-// What is the impact of buffering on subsequent reads?
-// When should you open and close file handles? For each command? For the lifetime of the KvStore?
-
-
-impl KvStore {
-    // TODO what means impl Into<PathBuf>
-    pub fn open(path: impl Into<PathBuf>) -> Result<KvStore> {
-        let path = path.into();
-        fs::create_dir_all(&path)?;
-
-        let mut readers = HashMap::new();
-        let mut index = BTreeMap::new();
-
-        let gen_list = sorted_gen_list(&path)?;
-        let mut uncompacted = 0;
-
-        for &gen in &gen_list {
-            let mut reader = BufReaderWithPos::new(File::open(log_path(&path, gen))?)?;
-            uncompacted += load(gen, &mut reader, &mut index)?;
-            readers.insert(gen, reader);
-        }
-
-        let current_gen = gen_list.last().unwrap_or(&0) + 1;
-        let writer = new_log_file(&path, current_gen, &mut readers)?;
-
-        Ok(KvStore {
-            path,
-            readers,
-            writer,
-            current_gen,
-            index,
-            uncompacted,
-        })
-    }
 
     /// Clears stale entries in the log.
     fn compact(&mut self) -> Result<()> {
@@ -225,6 +260,18 @@ impl KvStore {
         new_log_file(&self.path, gen, &mut self.readers)
     }
 }
+
+#[derive(Serialize, Deserialize, Debug)]
+enum Cmd {
+    Set(String, String),
+    Rm(String),
+}
+
+// TODOs:
+// where is the system performing buffering and where do you need buffering?
+// What is the impact of buffering on subsequent reads?
+// When should you open and close file handles? For each command? For the lifetime of the KvStore?
+
 
 /// Returns sorted generation number in the given directory.
 /// TODO lots of code I do not understand

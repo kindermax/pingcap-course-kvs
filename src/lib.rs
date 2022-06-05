@@ -3,6 +3,7 @@ pub mod client;
 pub mod server;
 mod error;
 mod common;
+pub mod thread_pool;
 
 pub use error::{Result, KvsError};
 pub use self::engines::{KvStore, KvsEngine, SledKvsEngine};

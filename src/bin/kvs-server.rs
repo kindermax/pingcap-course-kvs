@@ -1,6 +1,7 @@
 use clap::{Parser, ArgEnum};
 
 use kvs::server::KvsServer;
+use kvs::thread_pool::{SharedQueueThreadPool, RayonThreadPool, ThreadPool};
 use log::{info, warn, error, LevelFilter};
 
 use std::{fs, fmt};
@@ -116,7 +117,9 @@ fn run(cli: Cli) -> Result<()> {
 }
 
 fn run_with_engine<E: KvsEngine>(engine: E, addr: SocketAddr) -> Result<()> {
-    let server = KvsServer::new(engine);
+    let pool = RayonThreadPool::new(4)?;
+    // let pool = SharedQueueThreadPool::new(4)?;
+    let server = KvsServer::new(engine, pool);
     server.run(addr)
 }
 
