@@ -13,7 +13,7 @@ fn set_bench(c: &mut Criterion) {
                 (KvStore::open(temp_dir.path()).unwrap(), temp_dir)
             },
             |(mut store, _temp_dir)| {
-                for i in 1..(1 << 6) {
+                for i in 1..(1 << 2) {
                     store.set(format!("key{}", i), "value".to_string()).unwrap();
                 }
             },
@@ -27,7 +27,7 @@ fn set_bench(c: &mut Criterion) {
                 (SledKvsEngine::new(sled::open(&temp_dir).unwrap()), temp_dir)
             },
             |(mut db, _temp_dir)| {
-                for i in 1..(1 << 6) {
+                for i in 1..(1 << 2) {
                     db.set(format!("key{}", i), "value".to_string()).unwrap();
                 }
             },
@@ -39,7 +39,7 @@ fn set_bench(c: &mut Criterion) {
 
 fn get_bench(c: &mut Criterion) {
     let mut group = c.benchmark_group("get_bench");
-    for i in &vec![8] {
+    for i in &vec![2] {
         group.bench_with_input(format!("kvs_{}", i), i, |b, i| {
             let temp_dir = TempDir::new().unwrap();
             let mut store = KvStore::open(temp_dir.path()).unwrap();
@@ -56,7 +56,7 @@ fn get_bench(c: &mut Criterion) {
             })
         });
     }
-    for i in &vec![8] {
+    for i in &vec![2] {
         group.bench_with_input(format!("sled_{}", i), i, |b, i| {
             let temp_dir = TempDir::new().unwrap();
             let mut db = SledKvsEngine::new(sled::open(&temp_dir).unwrap());
