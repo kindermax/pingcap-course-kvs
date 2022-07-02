@@ -1,13 +1,13 @@
 use std::collections::{BTreeMap, HashMap};
-use std::fs::{self, File, OpenOptions};
+use std::fs::{self, File};
 use std::io::{self, BufReader, BufWriter, Read, Seek, SeekFrom, Write};
 use std::ops::Range;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
+use std::ffi::OsStr;
 
 use serde::{Deserialize, Serialize};
 use serde_json::Deserializer;
-use std::ffi::OsStr;
 
 use crate::{KvsError, Result};
 
@@ -308,7 +308,7 @@ fn new_log_file(
 ) -> Result<BufWriterWithPos<File>> {
     let path = log_path(&path, gen);
     let writer = BufWriterWithPos::new(
-        OpenOptions::new()
+        File::options()
             .create(true)
             .write(true)
             .append(true)
