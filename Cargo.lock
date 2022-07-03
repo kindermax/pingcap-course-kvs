@@ -241,6 +241,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "crossbeam"
+version = "0.8.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4ae5588f6b3c3cb05239e90bd110f257254aecd01e4635400391aeae07497845"
+dependencies = [
+ "cfg-if 1.0.0",
+ "crossbeam-channel",
+ "crossbeam-deque",
+ "crossbeam-epoch 0.9.8",
+ "crossbeam-queue",
+ "crossbeam-utils 0.8.8",
+]
+
+[[package]]
 name = "crossbeam-channel"
 version = "0.5.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -257,7 +271,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6455c0ca19f0d2fbf751b908d5c55c1f5cbc65e03c4225427254b46890bdde1e"
 dependencies = [
  "cfg-if 1.0.0",
- "crossbeam-epoch",
+ "crossbeam-epoch 0.9.8",
  "crossbeam-utils 0.8.8",
 ]
 
@@ -272,6 +286,40 @@ dependencies = [
  "crossbeam-utils 0.8.8",
  "lazy_static",
  "memoffset",
+ "scopeguard",
+]
+
+[[package]]
+name = "crossbeam-epoch"
+version = "0.9.9"
+source = "git+https://github.com/crossbeam-rs/crossbeam.git?branch=master#4b949c2b79d65d7fe941ba393792856195e315c6"
+dependencies = [
+ "autocfg 1.1.0",
+ "cfg-if 1.0.0",
+ "crossbeam-utils 0.8.10",
+ "memoffset",
+ "once_cell",
+ "scopeguard",
+]
+
+[[package]]
+name = "crossbeam-queue"
+version = "0.3.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1f25d8400f4a7a5778f0e4e52384a48cbd9b5c495d110786187fc750075277a2"
+dependencies = [
+ "cfg-if 1.0.0",
+ "crossbeam-utils 0.8.8",
+]
+
+[[package]]
+name = "crossbeam-skiplist"
+version = "0.0.0"
+source = "git+https://github.com/crossbeam-rs/crossbeam.git?branch=master#4b949c2b79d65d7fe941ba393792856195e315c6"
+dependencies = [
+ "cfg-if 1.0.0",
+ "crossbeam-epoch 0.9.9",
+ "crossbeam-utils 0.8.10",
  "scopeguard",
 ]
 
@@ -293,6 +341,15 @@ checksum = "0bf124c720b7686e3c2663cf54062ab0f68a88af2fb6a030e87e30bf721fcb38"
 dependencies = [
  "cfg-if 1.0.0",
  "lazy_static",
+]
+
+[[package]]
+name = "crossbeam-utils"
+version = "0.8.10"
+source = "git+https://github.com/crossbeam-rs/crossbeam.git?branch=master#4b949c2b79d65d7fe941ba393792856195e315c6"
+dependencies = [
+ "cfg-if 1.0.0",
+ "once_cell",
 ]
 
 [[package]]
@@ -514,6 +571,8 @@ dependencies = [
  "assert_cmd",
  "clap 3.1.18",
  "criterion",
+ "crossbeam",
+ "crossbeam-skiplist",
  "crossbeam-utils 0.6.6",
  "env_logger",
  "failure",
@@ -617,6 +676,12 @@ checksum = "e42c982f2d955fac81dd7e1d0e1426a7d702acd9c98d19ab01083a6a0328c424"
 dependencies = [
  "memchr",
 ]
+
+[[package]]
+name = "once_cell"
+version = "1.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7709cef83f0c1f58f666e746a08b21e0085f7440fa6a29cc194d68aac97a4225"
 
 [[package]]
 name = "oorandom"
@@ -1030,7 +1095,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7f96b4737c2ce5987354855aed3797279def4ebf734436c6aa4552cf8e169935"
 dependencies = [
  "crc32fast",
- "crossbeam-epoch",
+ "crossbeam-epoch 0.9.8",
  "crossbeam-utils 0.8.8",
  "fs2",
  "fxhash",
