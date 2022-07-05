@@ -22,6 +22,6 @@ impl ThreadPool for RayonThreadPool {
     fn spawn<F>(&self, func: F)
         where F: FnOnce() + Send + 'static
     {
-        self.pool.install(|| func());
+        self.pool.install(func);
     }
 }

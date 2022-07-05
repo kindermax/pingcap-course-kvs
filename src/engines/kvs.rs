@@ -311,7 +311,7 @@ impl KvStoreWriter {
 ///
 /// Returns the writer to the log.
 fn new_log_file(path: &Path, gen: u64) -> Result<BufWriterWithPos<File>> {
-    let path = log_path(&path, gen);
+    let path = log_path(path, gen);
     let writer = BufWriterWithPos::new(
         OpenOptions::new()
             .create(true)
