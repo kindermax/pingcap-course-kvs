@@ -1,7 +1,7 @@
 use clap::{Parser, ArgEnum};
 
 use kvs::server::KvsServer;
-use kvs::thread_pool::{SharedQueueThreadPool, RayonThreadPool, ThreadPool};
+use kvs::thread_pool::{RayonThreadPool, ThreadPool};
 use log::{info, warn, error, LevelFilter};
 
 use std::{fs, fmt};

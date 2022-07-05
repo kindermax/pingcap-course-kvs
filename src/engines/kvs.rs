@@ -38,8 +38,6 @@ const COMPACTION_THRESHOLD: u64 = 1024 * 1024;
 /// ```
 #[derive(Clone)]
 pub struct KvStore {
-    // directory for the log and other data
-    path: Arc<PathBuf>,
     // map generation number to the file reader
     index: Arc<SkipMap<String, CommandPos>>,
     reader: KvStoreReader,
@@ -90,7 +88,6 @@ impl KvStore {
         };
 
         Ok(KvStore {
-            path,
             reader,
             index,
             writer: Arc::new(Mutex::new(writer)),

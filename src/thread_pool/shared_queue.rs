@@ -13,7 +13,6 @@ pub struct SharedQueueThreadPool {
 }
 
 struct Worker {
-    id: u32,
     handle: Option<JoinHandle<()>>,
 }
 
@@ -35,7 +34,7 @@ impl Job {
 }
 
 impl Worker {
-    fn new(id: u32, receiver: Arc<Mutex<Receiver<Message>>>) -> Self {
+    fn new(receiver: Arc<Mutex<Receiver<Message>>>) -> Self {
         let handle = thread::spawn(move || loop {
             let msg = receiver.lock().unwrap().recv().unwrap();
             match msg {
@@ -46,7 +45,7 @@ impl Worker {
                 Message::Shutdown => break
             }
         });
-        Worker { id, handle: Some(handle) }
+        Worker { handle: Some(handle) }
     }
 }
 
@@ -64,8 +63,8 @@ impl ThreadPool for SharedQueueThreadPool {
         
         let mut workers = Vec::with_capacity(size as usize);
 
-        for id in 0..size {
-            workers.push(Worker::new(id, Arc::clone(&receiver)));
+        for _ in 0..size {
+            workers.push(Worker::new(Arc::clone(&receiver)));
         }
         
         log::info!("Started {} workers", workers.len());
